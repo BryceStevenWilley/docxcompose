@@ -285,8 +285,9 @@ class Composer(object):
                         if our_linked_style_id not in our_style_ids:
                             our_linked_style = doc.styles.element.get_by_id(
                                 linked_style_id)
-                            self.doc.styles.element.append(deepcopy(
-                                our_linked_style))
+                            if our_linked_style is not None:
+                                self.doc.styles.element.append(deepcopy(
+                                    our_linked_style))
             else:
                 # Create a mapping for abstractNumIds used in existing styles
                 # This is used when adding numberings to avoid having multiple
@@ -332,6 +333,7 @@ class Composer(object):
 
         src_numbering_part = doc.part.numbering_part
 
+        #print(f'For doc element: {element}')
         for num_id in num_ids:
             if num_id in self.num_id_mapping:
                 continue
@@ -345,9 +347,16 @@ class Composer(object):
             num_element.numId = next_num_id
 
             self.num_id_mapping[num_id] = next_num_id
+            next_num_id += 1
 
+            # TODO(brycew): should this be src_numbering_part? num_element shouldn't have any abstractNumIds
+            #print(f'\t{num_element.abstractNumId}') 
+            #print(f'\tFor num id: {num_id}')
+            #print(f'\tanum mapping: {self.anum_id_mapping}')
             anum_id = num_element.xpath('//w:abstractNumId')[0]
+            #print(f'\tanum_id: {anum_id.val}')
             if anum_id.val not in self.anum_id_mapping:
+                #print(f'\tnext_anum_id: {next_anum_id}')
                 # Find the referenced <w:abstractNum> element
                 res = src_numbering_part.element.xpath(
                     './/w:abstractNum[@w:abstractNumId="%s"]' % anum_id.val)
@@ -368,6 +377,7 @@ class Composer(object):
                     )
 
                 self._insert_abstract_num(anum_element)
+                next_anum_id += 1
             else:
                 anum_id.val = self.anum_id_mapping[anum_id.val]
 
