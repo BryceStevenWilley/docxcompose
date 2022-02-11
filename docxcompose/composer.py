@@ -204,23 +204,23 @@ class Composer(object):
         if not footnotes_refs:
             return
 
+        # from the new doc to be appended
         footnote_part = doc.part.rels.part_with_reltype(RT.FOOTNOTES)
+        element2 = parse_xml(footnote_part.blob)
 
+        # from the current doc being appended to
         my_footnote_part = self.footnote_part()
-
         footnotes = parse_xml(my_footnote_part.blob)
-        next_id = len(footnotes) + 1
 
+        next_id = len(footnotes) + 1
+        self.add_referenced_parts(footnote_part, my_footnote_part, element2)
         for ref in footnotes_refs:
             id_ = ref.get('{%s}id' % NS['w'])
-            element = parse_xml(footnote_part.blob)
-            footnote = deepcopy(element.find('.//w:footnote[@w:id="%s"]' % id_, NS))
+            footnote = deepcopy(element2.find('.//w:footnote[@w:id="%s"]' % id_, NS))
             footnotes.append(footnote)
             footnote.set('{%s}id' % NS['w'], str(next_id))
             ref.set('{%s}id' % NS['w'], str(next_id))
             next_id += 1
-
-        self.add_referenced_parts(footnote_part, my_footnote_part, element)
 
         my_footnote_part._blob = serialize_part_xml(footnotes)
 
@@ -333,7 +333,6 @@ class Composer(object):
 
         src_numbering_part = doc.part.numbering_part
 
-        #print(f'For doc element: {element}')
         for num_id in num_ids:
             if num_id in self.num_id_mapping:
                 continue
@@ -350,13 +349,8 @@ class Composer(object):
             next_num_id += 1
 
             # TODO(brycew): should this be src_numbering_part? num_element shouldn't have any abstractNumIds
-            #print(f'\t{num_element.abstractNumId}') 
-            #print(f'\tFor num id: {num_id}')
-            #print(f'\tanum mapping: {self.anum_id_mapping}')
             anum_id = num_element.xpath('//w:abstractNumId')[0]
-            #print(f'\tanum_id: {anum_id.val}')
             if anum_id.val not in self.anum_id_mapping:
-                #print(f'\tnext_anum_id: {next_anum_id}')
                 # Find the referenced <w:abstractNum> element
                 res = src_numbering_part.element.xpath(
                     './/w:abstractNum[@w:abstractNumId="%s"]' % anum_id.val)
